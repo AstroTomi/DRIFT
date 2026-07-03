@@ -1,0 +1,140 @@
+#!/bin/bash
+
+# =================================
+# FARGO3D: DRIFT - CLI ORCHESTRATOR
+# =================================
+
+# Stop the script on an unexpected error.
+set -e
+
+# Local Python path.
+PYTHON_BIN='./.venv/bin/python'
+
+# Principal commands.
+COMMAND=$1
+OPTION=$2
+
+# Colors.
+ERROR='\033[0;31m'   # Red.
+INFO='\033[0;33m'    # Yellow.
+TITLE='\033[0;34m'   # Blue.
+SUCCESS='\033[0;36m' # Green.
+NC='\033[0m'         # No Color.
+
+# Case: Virtual enviroment not found.
+if [ ! -f "$PYTHON_BIN" ]; then
+    echo    ''
+    echo -e "${ERROR}[CRITICAL ERROR]${NC} Virtual environment not found at ./.venv/"
+    echo    'Please ensure the .venv directory exists at the root of this software.'
+    echo    'To create a virtual enviroment you can run the following command on the root directory:'
+    echo    ''
+    echo -e "${INFO}  python3 -m venv .venv${NC}"
+    echo -e "${INFO}  .venv/bin/pip install -r requirements.txt${NC}"
+    echo    ''
+    exit 1
+fi
+
+case "$COMMAND" in
+    forge)
+        if [[ "$OPTION" == '-b' || "$OPTION" == '--blueprint' ]]; then
+
+            # Executes FORGE module first phase.
+            echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}FORGE: PHASE I${NC} engine..."
+            $PYTHON_BIN src/FORGE/forge_I.py
+            
+        elif [[ "$OPTION" == '-c' || "$OPTION" == '--calculate' ]]; then
+        
+            # Executes FORGE module second phase.
+            echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}FORGE: PHASE II${NC} engine..."
+            $PYTHON_BIN src/FORGE/forge_II.py
+
+        else
+        
+            # Case: Unknown options.
+            echo    ''
+            echo -e "${ERROR}[ERROR]${NC} Unknown option for FORGE module: ${INFO}$OPTION${NC}"
+            echo -e 'Available options:'
+            echo -e "${INFO}    -b, --blueprint${NC}  Scan setups and generate the parameter blueprint."
+            echo -e "${INFO}    -c, --calculate${NC}  Generate the parameter matrix, the .par files and directory tree in outputs/."
+            echo    ''
+            exit 1
+
+        fi
+        ;;
+
+    launch)
+        echo -e "${INFO}This module is not yet ready.${NC}"
+        ;;
+        
+    sentinel)
+        echo -e "${INFO}This module is not yet ready.${NC}"
+        ;;
+
+    unify)
+        echo -e "${INFO}This module is not yet ready.${NC}"
+        ;;
+
+    void)
+
+        if [[ "$OPTION" == '-a' || "$OPTION" == "--all" ]]; then
+
+            # Executes VOID module to wipe outputs directory content.
+            echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}VOID${NC} engine: Purging config, logs and outputs directories..."
+            $PYTHON_BIN src/VOID/void.py --all
+            echo -e "${TITLE}[DRIFT]${NC} Process ${SUCCESS}VOID${NC} has terminated successfully."
+
+        elif [[ "$OPTION" == '-c' || "$OPTION" == '--config' ]]; then
+
+            # Executes VOID module to wipe configs directory content.
+            echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}VOID${NC} engine: Purging config directory..."
+            $PYTHON_BIN src/VOID/void.py --config
+            echo -e "${TITLE}[DRIFT]${NC} Process ${SUCCESS}VOID${NC} has terminated successfully."
+
+        elif [[ "$OPTION" == '-l' || "$OPTION" == "--logs" ]]; then
+
+            # Executes VOID module to wipe logs directory content.
+            echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}VOID${NC} engine: Purging logs directory..."
+            $PYTHON_BIN src/VOID/void.py --logs
+            echo -e "${TITLE}[DRIFT]${NC} Process ${SUCCESS}VOID${NC} has terminated successfully."
+
+        elif [[ "$OPTION" == '-o' || "$OPTION" == "--outputs" ]]; then
+
+            # Executes VOID module to wipe outputs directory content.
+            echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}VOID${NC} engine: Purging outputs directory..."
+            $PYTHON_BIN src/VOID/void.py --outputs
+            echo -e "${TITLE}[DRIFT]${NC} Process ${SUCCESS}VOID${NC} has terminated successfully."
+
+        else
+
+            # Case: Unknown options for VOID module.
+            echo    ''
+            echo -e "${ERROR}[ERROR]${NC} Unknown option for VOID module: ${INFO}$OPTION${NC}"
+            echo -e 'Available options:'
+            echo -e "${INFO}    -a, --all${NC}      Wipe and purge all files in config/, logs/ and outputs/. This is a clean reset."
+            echo -e "${INFO}    -c, --config${NC}   Wipe and purge all files in config/."
+            echo -e "${INFO}    -l, --logs${NC}     Wipe and purge all files in logs/."
+            echo -e "${INFO}    -o, --outputs${NC}  Wipe and purge all files in outputs/."
+            echo    ''
+            exit 1
+
+        fi
+        ;;
+
+    # Case: Unknown command.  
+    *)
+        echo    ''
+        echo -e "${ERROR}[ERROR]${NC} Unknown command."
+        echo    'Usage: ./drift [command] [options]'
+        echo    ''
+        echo    'Available commands and options:'
+        echo -e "${INFO}  forge  -b, --blueprint${NC}  Scan setups and generate the parameter blueprint."
+        echo -e "${INFO}         -c, --calculate${NC}  Generate the parameter matrix, the .par files and directory tree in outputs/."
+        echo    ''
+        echo -e "${INFO}  void   -a, --all${NC}        Wipe and purge all files in config/, logs/ and outputs/. This is a clean reset."
+        echo -e "${INFO}         -c, --config${NC}     Wipe and purge all files in config/."
+        echo -e "${INFO}         -l, --logs${NC}       Wipe and purge all files in logs/."
+        echo -e "${INFO}         -o, --outputs${NC}    Wipe and purge all files in outputs/."
+        echo    ''
+        exit 1
+        ;;
+esac
