@@ -3,11 +3,24 @@ Functions file.
 
 This file contains useful functions for scanning, extracting and constructing data accross FORGE module and FARGO3D.
 Do not remove or change this file in any case.
+
+TODO: [x] Finish the deployment_tree() function.
+TODO: [x] Make sure that create_blueprint creates configs/ directory.
+TODO: [x] Implement the logging function.
 """
 
-from variables_forge import USER_FARGO_PATH, CONFIG_DIR_PATH, OUTPUT_DIR_PATH
+import sys, json, ast, itertools, copy, shutil
 from pathlib import Path
-import sys, json, ast, itertools, copy
+
+PROJECT_ROOT = Path(__file__).parents[2]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from utils.global_variables import USER_FARGO_PATH, CONFIGS_DIR_PATH, OUTPUTS_DIR_PATH
+from utils.logging import log
+
+# ============================================ FORGE-I ============================================
 
 def run_scan_and_selection() -> tuple[str, dict]:
     """### Scan and selection of the setup
@@ -40,28 +53,30 @@ def run_scan_and_selection() -> tuple[str, dict]:
                 available_setups.append(item.name)
 
     else:
-        print(f'CRITICAL ERROR: No setups directory found at {USER_FARGO_PATH}. Exiting.')
+        print(f'CRITICAL ERROR: No setups directory found at {USER_FARGO_PATH}. Exiting...\n')
+        log(f'FORGE-I CRITICAL ERROR | No setups directory found at {USER_FARGO_PATH}.')
         sys.exit(1)
 
     print('Available setups:')
     print(" | ".join(available_setups) + '\n')
 
     while True:
-        selected_setup = input('Please, select one of the available setups (or type "exit"): ')
+        selected_setup = input('Please, select one of the available setups (or type "exit"): ').strip()
 
         if selected_setup == 'exit':
-            print('\nAborting FORGE...')
+            print('\nAborting FORGE...\n')
+            log('FORGE-I | Aborted module with "exit" option.')
             sys.exit(0)
         
         elif selected_setup in available_setups:
-            print(f'\n[{selected_setup}] setup selected. Generating the main config file...\n')
+            print(f'\n[{selected_setup}] setup selected. Generating the main blueprint file...\n')
             par_file_path = USER_FARGO_PATH / 'setups' / f'{selected_setup}' / f'{selected_setup}.par'
             break
         
         else:
             print(f'\nError: "{selected_setup}" is not recognized. Try again.\n')
     
-    with open(par_file_path, 'r') as par_file:
+    with open(par_file_path, 'r', encoding = 'utf-8') as par_file:
         for row in par_file:
             parts = row.split()
             if (len(parts) != 0) and ('#' not in row):
@@ -69,10 +84,10 @@ def run_scan_and_selection() -> tuple[str, dict]:
         
         return selected_setup, par_file_parameters
 
-def create_blueprint(setup_name: str, parameters: dict, blueprint_name_external: str) -> None:
-    """### Creation of the main config file for the .par files creation
+def create_blueprint(setup_name: str, parameters: dict, blueprint_name_external: str) -> str:
+    """### Creation of the main blueprint file for the .par files creation
     
-    Creates a `.json` file for the main config of the simulations inside the `config/` folder.
+    Creates a `.json` file for the main config of the simulations inside the `configs/` folder.
     A back-door is implemented in the selection of the blueprint name in order to exit the function.
         
     Args:
@@ -80,25 +95,38 @@ def create_blueprint(setup_name: str, parameters: dict, blueprint_name_external:
         parameters (_dict_): _A dictionary of the found parameters in scanning._
         blueprint_name_external (_str_): _Name of the blueprint selected outside of method._
     Returns:
-        _None_: Nothing.
+        _str_: _A string with the name of the blueprint._
     """
     
+    # Making sure that configs/ exists.
+    CONFIGS_DIR_PATH.mkdir(parents = True, exist_ok = True)
+    
     # Auxiliary variables.
-    blueprint_path = CONFIG_DIR_PATH / f'{blueprint_name_external}.json'
+    blueprint_path = CONFIGS_DIR_PATH / f'{blueprint_name_external}.json'
     blueprint_name = blueprint_name_external
         
     # Checks if file exists.
     while True:
         if blueprint_path.is_file():
-            blueprint_name = input('\nA file with that name already exists, please select another (or type "exit"): ')
+            choice = input('\nA file with that name already exists, do you want to overwrite it? (Y/N, or type "exit"): ')
+            choice = choice.strip().upper()
             
-            if blueprint_name == 'exit':
-                print('\nAborting FORGE...')
+            if choice == 'EXIT':
+                print('\nAborting FORGE...\n')
+                log('FORGE-I | Aborted module with "exit" option.')
                 sys.exit(1)
                 
-            blueprint_path = CONFIG_DIR_PATH / f'{blueprint_name}.json'
+            elif choice.upper() in ('YES', 'Y'):
+                blueprint_path.unlink()
+                log(f'FORGE-I | The "{blueprint_name}.json" file has been overwritten.')
+                break
             
+            elif choice.upper() in ('NO', 'N'):
+                blueprint_name = input('\nPlease select another name: ').strip()
+                blueprint_path = CONFIGS_DIR_PATH / f'{blueprint_name}.json'
+        
         else:
+            # If not same name, continue.
             break
         
     # Content definition.
@@ -107,7 +135,7 @@ def create_blueprint(setup_name: str, parameters: dict, blueprint_name_external:
             "=============================================",
             "FARGO3D: DRIFT - MAIN PARAMETER CONFIGURATION",
             "=============================================",
-            "Modify the 'parameters' block below. IGNITE will use these base values.",
+            "Modify the 'parameters' block below. LAUNCH will use these base values.",
             "If you define a parameter as a list (e.g., [value1, value2]),",
             "the program will generate a cartesian product of the possible values."
         ],
@@ -118,21 +146,24 @@ def create_blueprint(setup_name: str, parameters: dict, blueprint_name_external:
         },
         "paths": {
             "base_par_file": f"setups/{setup_name}/{setup_name}.par",
-            "output_directory": f"{OUTPUT_DIR_PATH}/{blueprint_name}_experiments/"
+            "output_directory": f"{OUTPUTS_DIR_PATH}/"
         },
         "parameters": parameters
     }
 
     # Writing the file with json.dump for automatic pretty-printing.
     try:
-        with open(blueprint_path, 'x') as blueprint_file:
+        with open(blueprint_path, 'x', encoding = 'utf-8') as blueprint_file:
             json.dump(blueprint_data, blueprint_file, indent=4)
     
     except FileExistsError:
         print(f'\nERROR: The file {blueprint_name}.json was created by another process.')
+        log(f'FORGE-I ERROR | The file {blueprint_name}.json was created by another process.')
         sys.exit(1)
         
-    return None
+    return blueprint_name
+
+# ============================================ FORGE-II ===========================================
 
 def load_blueprint(blueprint_name: str) -> dict:
     """### Loads the `.json` blueprint file and returns it as a dictionary
@@ -144,14 +175,15 @@ def load_blueprint(blueprint_name: str) -> dict:
         _dict_: _A dictionary object containing the items of the `.json` file, this includes information, metadata, paths and parameters, respectively._
     """
     
-    blueprint_path = CONFIG_DIR_PATH / f'{blueprint_name}.json'
+    blueprint_path = CONFIGS_DIR_PATH / f'{blueprint_name}.json'
     
     try:
-        with open(blueprint_path, 'r') as blueprint_content:
+        with open(blueprint_path, 'r', encoding = 'utf-8') as blueprint_content:
             return json.load(blueprint_content)
         
     except FileNotFoundError:
-        print('\nERROR: The file was not found.')
+        print(f'\nERROR: The file "{blueprint_name}.json" was not found.\n')
+        log(f'FORGE-II ERROR | The file "{blueprint_name}.json" was not found.')
         sys.exit(1)
 
 def build_param_dict(parameter_dict: dict) -> tuple[dict, dict]:
@@ -248,35 +280,99 @@ def generate_combinations(static_params: dict, sweep_params: dict) -> list[dict]
 
     return run_matrix
 
-
-
-
-def build_deployment_tree(matrix: list[dict], output_dir: str, setup_name: str) -> None:
-    """
-    Iterates over the generated matrix, creates the run_X folders, 
-    and writes the specific .par files for FARGO3D.
-    """
-    base_dir = Path(output_dir)
-    # Create the main experiments directory if it doesn't exist
-    base_dir.mkdir(parents=True, exist_ok=True)
+def build_deployment_tree(run_matrix: list[dict], setup_name: str) -> None:
+    """### Main deploy of directories and `.par` files
     
-    print(f"\n[GENESIS] Deploying {len(matrix)} configurations in {base_dir.name}/...")
+    _Generates directories based on the number of simulations given by the matrix, each one with its own `.par` file._
 
-    for i, sim_params in enumerate(matrix, start=1):
-        # 1. Create the individual run folder (run_1, run_2, ...)
-        run_folder = base_dir / f"run_{i}"
-        run_folder.mkdir(exist_ok=True)
+    Args:
+        run_matrix (_list[dict]_): _A list containing all possible configurations of parameters as dictionaries._
+        setup_name (_str_): _A string with the selected setup._
+
+    Returns:
+        _None_: _Nothing._
+    """
+    # Auxiliary variables.
+    total_runs = len(run_matrix)
+    pad_width = max(3, len(str(total_runs)))
+
+    par_file_path = USER_FARGO_PATH / 'setups' / setup_name / f'{setup_name}.par'
+    par_file_rows = []
+
+    # Copy of the data from the original base .par file.
+    with open(par_file_path, 'r', encoding = 'utf-8') as par_file_content:
+        for row in par_file_content:
+            par_file_rows.append(row)
+
+    for run in range(1, total_runs + 1):
         
-        # 2. Define the path for the new .par file
-        par_file_path = run_folder / f"{setup_name}.par"
+        ## First block: Creating directories.
         
-        # 3. Write the physics configuration file
-        with open(par_file_path, 'w') as par_file:
-            par_file.write(f"# FARGO3D: DRIFT - SIMULATION RUN {i}\n")
-            par_file.write(f"# ==========================================\n")
+        # Directory creation.
+        run_name = f"run_{run:0{pad_width}d}"
+        run_dir = OUTPUTS_DIR_PATH / run_name
+        
+        # if directory exists, it is purged.
+        if run_dir.exists():
+            log(f'FORGE-II | Overwriting existing run directory: {run_name}')
+            shutil.rmtree(run_dir)
+        
+        run_dir.mkdir(parents = True, exist_ok = True)
+        
+        ## Second block: Creating .par files.
+        
+        # Dictionary of replacements for this specific run.
+        current_run_params = run_matrix[run - 1].copy()
+        
+        # OutputDir pointing to the isolated run folder.
+        current_run_params['OutputDir'] = f"{run_dir.resolve()}/"
+        
+        # This is for tracking the keys that have been replaced in place.
+        replaced_keys = set()
+        new_par_rows = []
+
+        for row in par_file_rows:
+            # Auxiliary variable.
+            stripped_row = row.strip()
             
-            for key, value in sim_params.items():
-                # The :<20 formatting aligns the columns nicely for human readability
-                par_file.write(f"{key:<20} {value}\n")
+            # A row is ignored if it's empy or is a comment.
+            if not stripped_row or stripped_row.startswith('#'):
+                new_par_rows.append(row)
+                continue
                 
-        print(f"  + Folder ready: {run_folder.name}/")
+            split_row = stripped_row.split()
+            # The parameter name is always the first word.
+            key = split_row[0]
+            
+            # Check if this row's key needs to be overwritten.
+            if key in current_run_params:
+                value = current_run_params[key]
+                # Key aligned to 30 chars, then the value.
+                new_row = f"{key:<30}\t{value}\n"
+                new_par_rows.append(new_row)
+                replaced_keys.add(key)
+                
+            else:
+                # Keep the original line intact.
+                new_par_rows.append(row)
+                
+        # Sanity check: if there are any parameters in current_run_params that were NOT 
+        # in the original .par file, append them at the end so they aren't lost.
+        missing_keys = set(current_run_params.keys()) - replaced_keys
+        if missing_keys:
+            new_par_rows.append("\n### DRIFT INJECTED PARAMETERS ###\n")
+            for key in sorted(missing_keys):
+                new_par_rows.append(f"{key:<30}\t{current_run_params[key]}\n")
+
+        # Write .par file directly inside outputs/run_XXX/
+        destination_par = run_dir / f"{setup_name}.par"
+        try:
+            with open(destination_par, 'x', encoding = 'utf-8') as out_file:
+                out_file.writelines(new_par_rows)
+
+        except FileExistsError:
+            # Write to log with time and file name / directory.
+            log(f'FORGE-II ERROR | Setup file ".par" exists at {run_dir}.')
+            continue
+    
+    return None

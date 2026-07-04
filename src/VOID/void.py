@@ -1,11 +1,27 @@
-import sys
-import shutil
+"""
+VOID: module file.
+
+Wipes out an specified directory.
+
+TODO: [x] Implement an are-you-sure? option.
+TODO: [x] Implement the logging function.
+"""
+
+import sys, shutil
 from pathlib import Path
 
-from variables_void import CONFIG_DIR_PATH, LOGS_DIR_PATH, OUTPUTS_DIR_PATH
+PROJECT_ROOT = Path(__file__).parents[2]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from utils.global_variables import CONFIGS_DIR_PATH, LOGS_DIR_PATH, OUTPUTS_DIR_PATH
+from utils.logging import log
+
+# =================================================================================================
 
 def purge_directory(target_dir: Path) -> None:
-    """### Purges the content of a specified directory.
+    """### Purges the content of a specified directory
 
     Args:
         target_dir (_Path_): _Path-object of the directory._
@@ -16,8 +32,8 @@ def purge_directory(target_dir: Path) -> None:
     # Existence verification.
     if not target_dir.exists():
         print(f'  The :{target_dir}/" directory does not exist yet. Nothing to purge.')
-        
-        return
+        log('VOID | Nothing to purge.')
+        return None
 
     # Purging content.
     deleted_items = 0
@@ -39,14 +55,21 @@ def purge_directory(target_dir: Path) -> None:
     # Report messages.
     if deleted_items > 0:
         print(f'  Purged {deleted_items} item(s) from "{target_dir}/".')
+        log(f'VOID | Purged {deleted_items} item(s) from {target_dir}.')
+        
     else:
         print(f'  The "{target_dir}/" directory is already empty.')
+        log('VOID | Nothing purged.')
+        
+    return None
 
 def main_void():
+    """### Main function of VOID module
+    """
     args = sys.argv[1:]
     
-    if "--config" in args:
-        purge_directory(CONFIG_DIR_PATH)
+    if "--configs" in args:
+        purge_directory(CONFIGS_DIR_PATH)
         
     elif "--logs" in args:
         purge_directory(LOGS_DIR_PATH)
@@ -56,13 +79,30 @@ def main_void():
         
     elif "--all" in args:
         print("  Executing full environment reset...")
-        purge_directory(CONFIG_DIR_PATH)
+        purge_directory(CONFIGS_DIR_PATH)
         purge_directory(LOGS_DIR_PATH)
         purge_directory(OUTPUTS_DIR_PATH)
         
     else:
-        print("  ERROR: VOID engine requires specific target flags (--config, --logs, --outputs or --all).")
+        # ? This maybe is not necessary.
+        print("  ERROR: VOID engine requires specific target flags (--configs, --logs, --outputs or --all).")
+        log('VOID ERROR | No flag specified.')
         sys.exit(1)
 
-if __name__ == "__main__":
-    main_void()
+choice = input('Are you sure you want to perform this action? (Y/N): ')
+choice = choice.upper()
+
+while True:
+    if choice in ('YES', 'Y'):
+        log('VOID | Initiating purge.')
+        break
+    
+    elif choice in ('NO', 'N'):
+        log('VOID | Aborted process.')
+        sys.exit(0)
+        
+    else:
+        choice = input('\nPlease, enter a valid option (Y/N): ')
+        choice = choice.upper()
+
+main_void()
