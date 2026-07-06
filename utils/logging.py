@@ -3,7 +3,7 @@ Logging file.
 
 This file contains the function needed to log utility messages to logs/. It is used across all DRIFT.
 
-TODO: [x] Create a logging function.
+TODO: [x] Change file extension from .txt lo .log
 """
 
 from datetime import datetime
@@ -16,6 +16,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from utils.global_variables import ROOT_DIR, LOGGING_ENABLED
+
+# =================================================================================================
 
 def log(message: str) -> None:
     """### Logging function
@@ -43,7 +45,7 @@ def log(message: str) -> None:
     logs_dir.mkdir(parents = True, exist_ok = True)
 
     # Creating the log file.
-    log_file = logs_dir / f"log_{date_str}.txt"
+    log_file = logs_dir / f"log_{date_str}.log"
 
     # This is the line to be written.
     formatted_line = f"[{time_str}]: {message}\n"

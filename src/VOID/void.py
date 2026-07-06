@@ -2,9 +2,6 @@
 VOID: module file.
 
 Wipes out an specified directory.
-
-TODO: [x] Implement an are-you-sure? option.
-TODO: [x] Implement the logging function.
 """
 
 import sys, shutil
@@ -55,7 +52,6 @@ def purge_directory(target_dir: Path) -> None:
     # Report messages.
     if deleted_items > 0:
         print(f'  Purged {deleted_items} item(s) from "{target_dir}/".')
-        log(f'VOID | Purged {deleted_items} item(s) from {target_dir}.')
         
     else:
         print(f'  The "{target_dir}/" directory is already empty.')
@@ -78,7 +74,7 @@ def main_void():
         purge_directory(OUTPUTS_DIR_PATH)
         
     elif "--all" in args:
-        print("  Executing full environment reset...")
+        print("\n  Executing full environment reset...")
         purge_directory(CONFIGS_DIR_PATH)
         purge_directory(LOGS_DIR_PATH)
         purge_directory(OUTPUTS_DIR_PATH)

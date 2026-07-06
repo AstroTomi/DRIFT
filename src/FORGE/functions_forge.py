@@ -3,10 +3,6 @@ Functions file.
 
 This file contains useful functions for scanning, extracting and constructing data accross FORGE module and FARGO3D.
 Do not remove or change this file in any case.
-
-TODO: [x] Finish the deployment_tree() function.
-TODO: [x] Make sure that create_blueprint creates configs/ directory.
-TODO: [x] Implement the logging function.
 """
 
 import sys, json, ast, itertools, copy, shutil

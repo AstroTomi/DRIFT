@@ -1,6 +1,6 @@
 .venv/
 __pycache__/
-configs/*
-logs/*.txt
-outputs/*
+configs/
+logs/
+outputs/
 notes.txt

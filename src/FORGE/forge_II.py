@@ -2,9 +2,6 @@
 FORGE: PHASE-II module file.
 
 Initializes the matrix generation for the directory deployment.
-
-TODO: [x] Implement an are-you-sure? option.
-TODO: [x] Implement the logging function.
 """
 
 import sys

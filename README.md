@@ -50,7 +50,7 @@ The **FORGE** engine translates a parameter design space into a directory tree r
 
 The **LAUNCH** engine manages the execution queue, maximizing CPU/GPU utilization without altering or contaminating the base FARGO3D source repository.
 
-3. **Zero-Touch Execution:**
+3. **(Almost) Zero-Touch Execution:**
    * **LAUNCH** never edits, moves, or overwrites the original `.par` file located inside `setups/[setup_name]/`.
    * Invokes the native compiled binary by passing the forged parameter file directly as a terminal argument:
      ```bash

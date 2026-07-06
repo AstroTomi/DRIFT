@@ -3,13 +3,12 @@ Variables file.
 
 This file contains all the static variables that are used across DRIFT.
 Do not remove or change this file in any other case.
-
-TODO: [x] Centralize variables.
-TODO: [x] Implement dynamic JSON configuration loader.
 """
 
 import json, sys
 from pathlib import Path
+
+# =================================================================================================
 
 # Main root directory.
 ROOT_DIR = Path(__file__).parents[1]

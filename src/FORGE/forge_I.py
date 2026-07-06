@@ -2,9 +2,6 @@
 FORGE: PHASE-I module file.
 
 Initializes the setup selector and blueprint generator.
-
-TODO: [x] Create an overwrite option for duplicate blueprints.
-TODO: [x] Implement the logging function.
 """
 
 import sys

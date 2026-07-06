@@ -1,6 +1,6 @@
 {
     "environment": {
-        "fargo3d_path": "/home/astrotomi/Documents/local/fargo3d"
+        "fargo3d_path": "/home/astrotomi/Documents/fargo3d"
     },
     "telemetry": {
         "logging_enabled": true

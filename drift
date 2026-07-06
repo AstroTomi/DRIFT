@@ -4,10 +4,6 @@
 # FARGO3D: DRIFT - CLI ORCHESTRATOR
 # =================================
 
-# TODO: [x] Add some line breaks
-# TODO: [x] Change options for FORGE module
-# TODO: [ ] Add banner and help option.
-
 # Stop the script on an unexpected error.
 set -e
 
@@ -70,19 +66,23 @@ EOF
     echo    ''
     echo -e "AVAILABLE MODULES & COMMANDS"
     echo    ""
-    echo -e "    ${INFO}forge${NC}            Deployment & matrix generation engine."
-    echo -e "        ${INFO}-b, --blueprint${NC}  Scan setups and generate the parameter blueprint (.json)."
-    echo -e "        ${INFO}-d, --deploy${NC}     Build parameter matrix, .par files, and directory tree."
+    echo -e "    ${INFO}forge${NC}                Deployment & matrix generation engine."
+    echo -e "        ${INFO}-b, --blueprint${NC}      Scan setups and generate the parameter blueprint (.json)."
+    echo -e "        ${INFO}-d, --deploy${NC}         Build parameter matrix, .par files, and directory tree."
     echo    ''
-    echo -e "    ${INFO}void${NC}             Controlled directory purging engine."
-    echo -e "        ${INFO}-a, --all${NC}        Wipe config/, logs/, and outputs/ (Clean reset)."
-    echo -e "        ${INFO}-c, --configs${NC}    Wipe and purge all blueprint files in configs/."
-    echo -e "        ${INFO}-l, --logs${NC}       Wipe and purge all log files in logs/."
-    echo -e "        ${INFO}-o, --outputs${NC}    Wipe and purge all run directories in outputs/."
+    echo -e "    ${INFO}void${NC}                 Controlled directory purging engine."
+    echo -e "        ${INFO}-a, --all${NC}            Wipe config/, logs/, and outputs/ (Clean reset)."
+    echo -e "        ${INFO}-c, --configs${NC}        Wipe and purge all blueprint files in configs/."
+    echo -e "        ${INFO}-l, --logs${NC}           Wipe and purge all log files in logs/."
+    echo -e "        ${INFO}-o, --outputs${NC}        Wipe and purge all run directories in outputs/."
     echo    ""
-    echo -e "    ${ERROR}sentinel${NC}      Global telemetry & system state controller ${INFO}[In Development]${NC}."
-    echo -e "    ${ERROR}launch${NC}        Simulation execution engine ${INFO}[In Development]${NC}."
-    echo -e "    ${ERROR}unify${NC}         Data aggregation & post-processing engine ${INFO}[In Development]${NC}."
+    echo -e "    ${INFO}sentinel${NC}             Global telemetry & system state controller."
+    echo -e "        ${INFO}-e, --enablelogs${NC}     Enable the log writting on logs/."
+    echo -e "        ${INFO}-d, --disablelogs${NC}    Disable the log writting on logs/."
+    echo -e "        ${INFO}-s, --status${NC}         Checks the current state of log writting."
+    echo    ""
+    echo -e "    ${ERROR}launch${NC}              Simulation execution engine ${INFO}[In Development]${NC}."
+    echo -e "    ${ERROR}unify${NC}               Data aggregation & post-processing engine ${INFO}[In Development]${NC}."
     echo    ''
     echo -e "Run ${INFO}./drift help${NC} or simply ${INFO}./drift${NC} at any time to show this panel."
     echo    ''
@@ -127,7 +127,43 @@ case "$COMMAND" in
         ;;
         
     sentinel)
-        echo -e "${INFO}This module is not yet ready.${NC}"
+        if [[ "$OPTION" == '-e' || "$OPTION" == '--enablelogs' ]]; then
+
+            # Executes SENTINEL module for enabling log writting.
+            echo    ''
+            echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}SENTINEL${NC} engine..."
+            $PYTHON_BIN src/SENTINEL/logs.py --enablelogs
+            echo    ''
+            
+        elif [[ "$OPTION" == '-d' || "$OPTION" == '--disablelogs' ]]; then
+        
+            # Executes SENTINEL module for disabling log writting.
+            echo    ''
+            echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}SENTINEL${NC} engine..."
+            $PYTHON_BIN src/SENTINEL/logs.py --disablelogs
+            echo    ''
+
+        elif [[ "$OPTION" == '-s' || "$OPTION" == '--status' ]]; then
+        
+            # Executes SENTINEL module for checking state of log writting.
+            echo    ''
+            echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}SENTINEL${NC} engine..."
+            $PYTHON_BIN src/SENTINEL/logs.py --status
+            echo  
+
+        else
+        
+            # Case: Unknown options.
+            echo    ''
+            echo -e "${ERROR}[ERROR]${NC} Unknown option for SENTINEL module: ${INFO}$OPTION${NC}"
+            echo -e 'Available options:'
+            echo -e "        ${INFO}-e, --enablelogs${NC}     Enable the log writting on logs/."
+            echo -e "        ${INFO}-d, --disablelogs${NC}    Disable the log writting on logs/."
+            echo -e "        ${INFO}-s, --status${NC}         Checks the current state of log writting."
+            echo    ''
+            exit 1
+
+        fi
         ;;
 
     unify)
@@ -153,7 +189,7 @@ case "$COMMAND" in
             echo    ''
             echo -e "${TITLE}[DRIFT]${NC} Launching ${SUCCESS}VOID${NC} engine: Purging configs directory..."
             echo    ''
-            $PYTHON_BIN src/VOID/void.py --config
+            $PYTHON_BIN src/VOID/void.py --configs
             echo    ''
             echo -e "${TITLE}[DRIFT]${NC} Process ${SUCCESS}VOID${NC} has terminated successfully."
             echo    ''
