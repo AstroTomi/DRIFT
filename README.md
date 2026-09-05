@@ -43,7 +43,7 @@ The **FORGE** engine translates a parameter design space into a directory tree r
    * Finally, it explicitly overrides the target output directory to eliminate redundant disk I/O operations, modifying the `"OutputDir"` parameter from `"@outputs/[setup name]/"` directly to `[DRIFT absolute path]/outputs/run_XXX/`.
 
 
-# AFTER THIS, NOTHING ELSE MATTERS...
+# After this point, nothing is implemented yet (in production or debugging)
 
 
 ### PHASE 1: Asynchronous & Shielded Execution Loop (`LAUNCH` & `SENTINEL`)
